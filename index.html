@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Playoffs — Torneo Clausura LPF 2026</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b1120;
+      color: #f1f5f9;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .match-card {
+      background: #111a2e;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .match-card:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+    .winner-row {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    .tab-btn-active {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
+    }
+    .tab-btn-inactive {
+      background: rgba(30, 41, 59, 0.7);
+      color: #cbd5e1;
+    }
+    .tab-btn-inactive:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-sky-500/30">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 via-sky-500 to-blue-700 flex items-center justify-center shadow-lg shadow-sky-900/40 shrink-0">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+              <path d="M4 22h16"/>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white truncate">
+              Torneo Clausura LPF 2026 — Simulador de Playoffs
+            </h1>
+            <p class="text-xs text-slate-400 truncate">
+              Reglamento oficial AFA/LPF 2026 · Localía automática · Alargue + Penales · Impacto en Copas 2027
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button id="btn-load-real" type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30 hover:bg-sky-500/25 transition">
+            <svg id="icon-sync-real" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <span id="label-sync-real">Reales</span>
+          </button>
+          <button id="btn-sim-random" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition">
+            Simular resto
+          </button>
+          <button id="btn-reset-all" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition">
+            Reiniciar
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex flex-wrap items-center gap-1.5" aria-label="Vistas principales">
+        <button id="tab-bracket" type="button" data-tab="bracket" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-active">
+          Cuadro de Playoffs
+        </button>
+        <button id="tab-copas" type="button" data-tab="copas" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-inactive">
+          Copas 2027 en Vivo
+        </button>
+        <button id="tab-rules" type="button" data-tab="rules" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-inactive">
+          Zonas y Reglamento
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5">
+    <!-- Toast Notification -->
+    <div id="toast-box" class="hidden fixed bottom-4 right-4 z-50 max-w-sm px-4 py-2.5 rounded-xl bg-slate-900 border border-sky-500/40 text-xs sm:text-sm text-sky-100 shadow-2xl"></div>
+
+    <!-- VIEW 1: BRACKET SIMULATOR -->
+    <section id="view-bracket" class="space-y-5">
+      <!-- Status & Champion Banner -->
+      <div id="champion-banner" class="glass-card rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Quick Legend -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-400 px-1">
+        <span class="inline-flex items-center gap-1.5">
+          <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold text-[10px]">LOCAL</span>
+          Estadio del mejor ubicado en Fase de Zonas (Octavos, Cuartos y Semis)
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">EMPATE</span>
+          Alargue 30' (2×15') y penales en todas las rondas (Art. 14)
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px]">REAL</span>
+          Resultados reales confirmados (actualización en vivo · editables)
+        </span>
+      </div>
+
+      <!-- Responsive 4-Stage Bracket Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+        <!-- Column 1: Octavos de Final -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-sky-400">Octavos de Final</h2>
+            <span class="text-[11px] text-slate-400">20 al 25 nov</span>
+          </div>
+          <div id="col-octavos" class="space-y-3"></div>
+        </div>
+
+        <!-- Column 2: Cuartos de Final -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-sky-400">Cuartos de Final</h2>
+            <span class="text-[11px] text-slate-400">Estadio mejor ubicado</span>
+          </div>
+          <div id="col-cuartos" class="space-y-3"></div>
+        </div>
+
+        <!-- Column 3: Semifinales -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-sky-400">Semifinales</h2>
+            <span class="text-[11px] text-slate-400">Estadio mejor ubicado</span>
+          </div>
+          <div id="col-semis" class="space-y-3"></div>
+        </div>
+
+        <!-- Column 4: Final -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">Gran Final</h2>
+            <span class="text-[11px] text-slate-400">Sáb 12 dic · La Plata</span>
+          </div>
+          <div id="col-final" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: COPAS 2027 EN VIVO -->
+    <section id="view-copas" class="hidden space-y-5">
+      <!-- Scenario Controls -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <h2 class="text-base sm:text-lg font-bold text-white">Simulador de Clasificación a Copas CONMEBOL 2027</h2>
+          <p class="text-xs sm:text-sm text-slate-300">
+            Incluye el efecto real del título de <strong class="text-sky-300">Boca Juniors en la Copa Sudamericana 2026</strong> (21/11) y se recalcula automáticamente según el campeón del Clausura que simules.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 shrink-0">
+          <span class="text-xs font-semibold text-slate-300">Final Libertadores 2026 (28/11):</span>
+          <div class="flex items-center gap-1.5">
+            <button id="btn-lib-palmeiras" type="button" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition">
+              Gana Palmeiras
+            </button>
+            <button id="btn-lib-estudiantes" type="button" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition">
+              Gana Estudiantes (LP)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Impact Callout -->
+      <div id="copas-summary-note" class="rounded-xl p-3.5 bg-sky-950/50 border border-sky-500/30 text-xs sm:text-sm text-sky-100"></div>
+
+      <!-- Libertadores & Sudamericana Cards -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm sm:text-base font-bold text-emerald-400">Copa Libertadores 2027</h3>
+            <span id="lib-count-badge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"></span>
+          </div>
+          <div id="lib-list" class="space-y-2"></div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm sm:text-base font-bold text-sky-400">Copa Sudamericana 2027</h3>
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30">6 plazas</span>
+          </div>
+          <div id="sud-list" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Tabla Anual 2026 (Top 15 + Platense) -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm sm:text-base font-bold text-white">Tabla Anual 2026 (Top 15 + Clasificados Especiales)</h3>
+          <span class="text-xs text-slate-400">32 PJ (Fase de Zonas Apertura + Clausura)</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="border-b border-slate-700/80 text-slate-400 text-[11px] uppercase">
+                <th class="py-2 pr-2">#</th>
+                <th class="py-2 pr-3">Equipo</th>
+                <th class="py-2 px-2 text-center">Pts</th>
+                <th class="py-2 px-2 text-center">Dif</th>
+                <th class="py-2 pl-2">Estado en este escenario</th>
+              </tr>
+            </thead>
+            <tbody id="anual-table-body" class="divide-y divide-slate-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ZONAS Y REGLAMENTO -->
+    <section id="view-rules" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+          <h2 class="text-sm sm:text-base font-bold text-sky-400">Zona A — Clasificados del Clausura 2026</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-700 text-slate-400 uppercase text-[10px]">
+                  <th class="py-2 pr-2">Pos</th>
+                  <th class="py-2 pr-2">Equipo</th>
+                  <th class="py-2 px-1.5 text-center">Pts</th>
+                  <th class="py-2 px-1.5 text-center">Dif</th>
+                  <th class="py-2 px-1.5 text-center">GF</th>
+                  <th class="py-2 pl-2">Estadio Local</th>
+                </tr>
+              </thead>
+              <tbody id="zona-a-body" class="divide-y divide-slate-800/80"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+          <h2 class="text-sm sm:text-base font-bold text-amber-400">Zona B — Clasificados del Clausura 2026</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-700 text-slate-400 uppercase text-[10px]">
+                  <th class="py-2 pr-2">Pos</th>
+                  <th class="py-2 pr-2">Equipo</th>
+                  <th class="py-2 px-1.5 text-center">Pts</th>
+                  <th class="py-2 px-1.5 text-center">Dif</th>
+                  <th class="py-2 px-1.5 text-center">GF</th>
+                  <th class="py-2 pl-2">Estadio Local</th>
+                </tr>
+              </thead>
+              <tbody id="zona-b-body" class="divide-y divide-slate-800/80"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reglamento Oficial LPF 2026 -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-4">
+        <h2 class="text-base font-bold text-white">Reglas aplicadas por este simulador (Reglamento Torneos LPF 2026)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm text-slate-300">
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+            <h3 class="font-bold text-sky-300">1. Localía (Art. 14.2.1 – 14.5.1)</h3>
+            <p>
+              Octavos, Cuartos y Semifinales se juegan a partido único en el estadio del club <strong>mejor ubicado en la Fase de Zonas</strong> (menor número de puesto del 1.º al 8.º). Por el diseño de la llave, nunca coinciden dos clubes del mismo puesto antes de la Final.
+            </p>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+            <h3 class="font-bold text-amber-300">2. Alargue y Penales (Art. 14.2.2 – 14.5.2)</h3>
+            <p>
+              En todas las instancias (desde Octavos hasta la Final), si hay empate tras los 90 minutos reglamentarios se disputa un <strong>tiempo suplementario de 30 minutos</strong> (dos tiempos de 15') y, de persistir la igualdad, definición por <strong>tiros desde el punto penal</strong>.
+            </p>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+            <h3 class="font-bold text-emerald-300">3. Gran Final y Copas (Art. 14.5 y Arts. 27–28)</h3>
+            <p>
+              La Final se juega el <strong>sábado 12 de diciembre de 2026</strong> en cancha neutral (Estadio Diego Armando Maradona, La Plata). El campeón obtiene <strong>ARG 2 a la Copa Libertadores 2027</strong> y clasifica al <strong>Trofeo de Campeones 2026</strong> frente a Belgrano (19/12).
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DATOS VERIFICADOS — TORNEO CLAUSURA LPF 2026 Y TABLA ANUAL 2026
+    // =========================================================================
+    const TEAMS = {
+      INS: { id: 'INS', name: 'Instituto', short: 'INS', zone: 'A', pos: 1, zPts: 34, zGd: 11, zGf: 26, stadium: 'Monumental Presidente Perón (Córdoba)', c1: '#dc2626', c2: '#ffffff', anualPos: 8, anualPts: 55, anualGd: 14 },
+      BOC: { id: 'BOC', name: 'Boca Juniors', short: 'BOC', zone: 'A', pos: 2, zPts: 33, zGd: 10, zGf: 24, stadium: 'Alberto J. Armando (La Bombonera)', c1: '#1d4ed8', c2: '#facc15', anualPos: 1, anualPts: 63, anualGd: 23 },
+      VEL: { id: 'VEL', name: 'Vélez Sarsfield', short: 'VEL', zone: 'A', pos: 3, zPts: 28, zGd: 8, zGf: 25, stadium: 'José Amalfitani (Liniers)', c1: '#2563eb', c2: '#ffffff', anualPos: 6, anualPts: 56, anualGd: 14 },
+      DYJ: { id: 'DYJ', name: 'Defensa y Justicia', short: 'DYJ', zone: 'A', pos: 4, zPts: 28, zGd: 6, zGf: 21, stadium: 'Norberto Tomaghello (F. Varela)', c1: '#16a34a', c2: '#facc15', anualPos: 14, anualPts: 47, anualGd: 3 },
+      LAN: { id: 'LAN', name: 'Lanús', short: 'LAN', zone: 'A', pos: 5, zPts: 26, zGd: 7, zGf: 19, stadium: 'Ciudad de Lanús - Néstor Díaz Pérez', c1: '#7f1d1d', c2: '#f8fafc', anualPos: 9, anualPts: 50, anualGd: 10 },
+      NOB: { id: 'NOB', name: "Newell's Old Boys", short: 'NOB', zone: 'A', pos: 6, zPts: 23, zGd: 3, zGf: 16, stadium: 'Marcelo Bielsa (Rosario)', c1: '#dc2626', c2: '#111827', anualPos: 22, anualPts: 38, anualGd: -9 },
+      IND: { id: 'IND', name: 'Independiente', short: 'IND', zone: 'A', pos: 7, zPts: 23, zGd: -1, zGf: 15, stadium: 'Libertadores de América - R. E. Bochini', c1: '#b91c1c', c2: '#ffffff', anualPos: 13, anualPts: 47, anualGd: 3 },
+      GYM: { id: 'GYM', name: 'Gimnasia (Mendoza)', short: 'GYM', zone: 'A', pos: 8, zPts: 22, zGd: 1, zGf: 18, stadium: 'Víctor Antonio Legrotaglie (Mendoza)', c1: '#111827', c2: '#f8fafc', anualPos: 17, anualPts: 41, anualGd: -7 },
+
+      ROS: { id: 'ROS', name: 'Rosario Central', short: 'ROS', zone: 'B', pos: 1, zPts: 34, zGd: 14, zGf: 26, stadium: 'Gigante de Arroyito (Rosario)', c1: '#1e40af', c2: '#facc15', anualPos: 2, anualPts: 62, anualGd: 18 },
+      ARG: { id: 'ARG', name: 'Argentinos Juniors', short: 'ARG', zone: 'B', pos: 2, zPts: 31, zGd: 6, zGf: 20, stadium: 'Diego Armando Maradona (Paternal)', c1: '#dc2626', c2: '#ffffff', anualPos: 3, anualPts: 60, anualGd: 10 },
+      GLP: { id: 'GLP', name: 'Gimnasia (LP)', short: 'GLP', zone: 'B', pos: 3, zPts: 31, zGd: 5, zGf: 25, stadium: 'Juan Carmelo Zerillo (La Plata)', c1: '#1e3a8a', c2: '#ffffff', anualPos: 5, anualPts: 57, anualGd: 5 },
+      RIV: { id: 'RIV', name: 'River Plate', short: 'RIV', zone: 'B', pos: 4, zPts: 26, zGd: 7, zGf: 21, stadium: 'Monumental (Núñez)', c1: '#dc2626', c2: '#ffffff', anualPos: 7, anualPts: 55, anualGd: 17 },
+      BAR: { id: 'BAR', name: 'Barracas Central', short: 'BAR', zone: 'B', pos: 5, zPts: 26, zGd: 4, zGf: 17, stadium: 'Claudio Chiqui Tapia (CABA)', c1: '#dc2626', c2: '#f8fafc', anualPos: 12, anualPts: 47, anualGd: 4 },
+      BEL: { id: 'BEL', name: 'Belgrano', short: 'BEL', zone: 'B', pos: 6, zPts: 23, zGd: 2, zGf: 17, stadium: 'Julio César Villagra (Córdoba)', c1: '#0284c7', c2: '#ffffff', anualPos: 10, anualPts: 49, anualGd: 6 },
+      IRV: { id: 'IRV', name: 'Independiente Rivadavia', short: 'IRV', zone: 'B', pos: 7, zPts: 23, zGd: -3, zGf: 21, stadium: 'Bautista Gargantini (Mendoza)', c1: '#1e3a8a', c2: '#38bdf8', anualPos: 4, anualPts: 57, anualGd: 11 },
+      HUR: { id: 'HUR', name: 'Huracán', short: 'HUR', zone: 'B', pos: 8, zPts: 22, zGd: -2, zGf: 14, stadium: 'Tomás Adolfo Ducó (Parque Patricios)', c1: '#ef4444', c2: '#ffffff', anualPos: 15, anualPts: 44, anualGd: 2 },
+    };
+
+    // Tabla Anual 2026 completa (Top 15 + Platense para la lógica de Copas 2027)
+    const ANUAL_TABLE = [
+      { id: 'BOC', name: 'Boca Juniors', pts: 63, gd: 23, note: 'Campeón de Liga · Campeón Sudamericana 2026' },
+      { id: 'ROS', name: 'Rosario Central', pts: 62, gd: 18, note: '' },
+      { id: 'ARG', name: 'Argentinos Juniors', pts: 60, gd: 10, note: '' },
+      { id: 'IRV', name: 'Independiente Rivadavia', pts: 57, gd: 11, note: '' },
+      { id: 'GLP', name: 'Gimnasia (LP)', pts: 57, gd: 5, note: '' },
+      { id: 'VEL', name: 'Vélez Sarsfield', pts: 56, gd: 14, note: '' },
+      { id: 'RIV', name: 'River Plate', pts: 55, gd: 17, note: '' },
+      { id: 'INS', name: 'Instituto', pts: 55, gd: 14, note: '' },
+      { id: 'LAN', name: 'Lanús', pts: 50, gd: 10, note: '' },
+      { id: 'BEL', name: 'Belgrano', pts: 49, gd: 6, note: 'Campeón Torneo Apertura 2026' },
+      { id: 'EST', name: 'Estudiantes (LP)', pts: 47, gd: 11, note: 'Finalista Libertadores 2026 vs Palmeiras' },
+      { id: 'BAR', name: 'Barracas Central', pts: 47, gd: 4, note: '' },
+      { id: 'IND', name: 'Independiente', pts: 47, gd: 3, note: 'Desempate Fair Play: 877 pts' },
+      { id: 'DYJ', name: 'Defensa y Justicia', pts: 47, gd: 3, note: 'Desempate Fair Play: 870 pts' },
+      { id: 'HUR', name: 'Huracán', pts: 44, gd: 2, note: '' },
+      { id: 'PLA', name: 'Platense (24.º Anual)', pts: 36, gd: -7, note: 'Finalista Copa Argentina 2026 vs Boca (cupo asegurado)' }
+    ];
+
+    // Estructura oficial de llaves (LPF Clausura 2026)
+    const MATCH_DEFS = [
+      // Lado A — Octavos
+      { id: 'O1', round: 'octavos', side: 'A', label: 'Octavos 1 · Lado A', schedule: 'Vie 20/11 · 20:00', fixedTeams: ['VEL', 'BEL'] },
+      { id: 'O2', round: 'octavos', side: 'A', label: 'Octavos 2 · Lado A', schedule: 'Sáb 21/11 · 17:00', fixedTeams: ['ARG', 'IND'] },
+      { id: 'O3', round: 'octavos', side: 'A', label: 'Octavos 3 · Lado A', schedule: 'Dom 22/11 · 19:00', fixedTeams: ['RIV', 'LAN'] },
+      { id: 'O4', round: 'octavos', side: 'A', label: 'Octavos 4 · Lado A', schedule: 'Dom 22/11 · 22:00', fixedTeams: ['INS', 'HUR'] },
+      // Lado B — Octavos
+      { id: 'O5', round: 'octavos', side: 'B', label: 'Octavos 5 · Lado B', schedule: 'Lun 23/11 · 17:00', fixedTeams: ['GLP', 'NOB'] },
+      { id: 'O6', round: 'octavos', side: 'B', label: 'Octavos 6 · Lado B', schedule: 'Mié 25/11 · 21:00', fixedTeams: ['BOC', 'IRV'] },
+      { id: 'O7', round: 'octavos', side: 'B', label: 'Octavos 7 · Lado B', schedule: 'Sáb 21/11 · 15:00', fixedTeams: ['DYJ', 'BAR'] },
+      { id: 'O8', round: 'octavos', side: 'B', label: 'Octavos 8 · Lado B', schedule: 'Dom 22/11 · 16:00', fixedTeams: ['ROS', 'GYM'] },
+      // Cuartos
+      { id: 'Q1', round: 'cuartos', side: 'A', label: 'Cuartos 1 · Lado A', schedule: 'Gan. O1 vs Gan. O2', sources: ['O1', 'O2'] },
+      { id: 'Q2', round: 'cuartos', side: 'A', label: 'Cuartos 2 · Lado A', schedule: 'Gan. O3 vs Gan. O4', sources: ['O3', 'O4'] },
+      { id: 'Q3', round: 'cuartos', side: 'B', label: 'Cuartos 3 · Lado B', schedule: 'Gan. O5 vs Gan. O6', sources: ['O5', 'O6'] },
+      { id: 'Q4', round: 'cuartos', side: 'B', label: 'Cuartos 4 · Lado B', schedule: 'Gan. O7 vs Gan. O8', sources: ['O7', 'O8'] },
+      // Semifinales
+      { id: 'SF1', round: 'semis', side: 'A', label: 'Semifinal 1 · Lado A', schedule: 'Gan. Q1 vs Gan. Q2', sources: ['Q1', 'Q2'] },
+      { id: 'SF2', round: 'semis', side: 'B', label: 'Semifinal 2 · Lado B', schedule: 'Gan. Q3 vs Gan. Q4', sources: ['Q3', 'Q4'] },
+      // Final
+      { id: 'FIN', round: 'final', side: 'F', label: 'Gran Final · Clausura 2026', schedule: 'Sáb 12/12 · Estadio Diego A. Maradona (La Plata)', sources: ['SF1', 'SF2'], neutral: true }
+    ];
+
+    // Resultados reales confirmados al 23/11/2026 (respaldo local + base para sync en vivo)
+    const REAL_RESULTS_BASELINE = {
+      O1: { hGoals: 2, aGoals: 2, hPen: 3, aPen: 1, isReal: true, realLabel: 'Real · 20/11' },
+      O2: { hGoals: 1, aGoals: 2, hPen: null, aPen: null, isReal: true, realLabel: 'Real · 21/11' },
+      O3: { hGoals: 3, aGoals: 1, hPen: null, aPen: null, isReal: true, realLabel: 'Real · 22/11' },
+      O4: { hGoals: 2, aGoals: 1, hPen: null, aPen: null, isReal: true, realLabel: 'Real · 22/11' },
+      O7: { hGoals: 0, aGoals: 1, hPen: null, aPen: null, isReal: true, realLabel: 'Real · 21/11' },
+      O8: { hGoals: 3, aGoals: 1, hPen: null, aPen: null, isReal: true, realLabel: 'Real · 22/11' }
+    };
+
+    const LIVE_CACHE_KEY = 'lpf_clausura_2026_live_real_v1';
+
+    // Mapeo flexible de nombres de equipos desde el feed oficial de Primera División (ESPN arg.1)
+    const TEAM_MATCHERS = [
+      { id: 'INS', keys: ['instituto'] },
+      { id: 'BOC', keys: ['boca juniors', 'boca'] },
+      { id: 'VEL', keys: ['velez', 'vélez'] },
+      { id: 'DYJ', keys: ['defensa y justicia', 'defensa'] },
+      { id: 'LAN', keys: ['lanus', 'lanús'] },
+      { id: 'NOB', keys: ['newell'] },
+      { id: 'IRV', keys: ['independiente rivadavia', 'ind. rivadavia', 'rivadavia'] },
+      { id: 'IND', keys: ['independiente'] },
+      { id: 'GYM', keys: ['gimnasia mendoza', 'gimnasia (m)', 'gimnasia y esgrima mendoza', 'gimnasia de mendoza'] },
+      { id: 'GLP', keys: ['gimnasia la plata', 'gimnasia (lp)', 'gimnasia y esgrima la plata', 'gimnasia'] },
+      { id: 'ROS', keys: ['rosario central', 'central'] },
+      { id: 'ARG', keys: ['argentinos juniors', 'argentinos'] },
+      { id: 'RIV', keys: ['river plate', 'river'] },
+      { id: 'BAR', keys: ['barracas central', 'barracas'] },
+      { id: 'BEL', keys: ['belgrano'] },
+      { id: 'HUR', keys: ['huracan', 'huracán'] }
+    ];
+
+    function normalizeTeamName(str) {
+      return (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    }
+
+    function matchTeamId(rawName) {
+      const norm = normalizeTeamName(rawName);
+      if (!norm) return null;
+      // Check specific compound names first (Independiente Rivadavia before Independiente, Gimnasia Mendoza before Gimnasia LP)
+      for (const entry of TEAM_MATCHERS) {
+        if (entry.keys.some(k => norm.includes(normalizeTeamName(k)))) {
+          return entry.id;
+        }
+      }
+      return null;
+    }
+
+    // =========================================================================
+    // 2. ESTADO DE LA APP
+    // =========================================================================
+    const state = {
+      activeTab: 'bracket',
+      estudiantesWinsLib: false,
+      scores: {} // matchId -> { hGoals, aGoals, hPen, aPen, isReal, realLabel, homeId, awayId }
+    };
+
+    function createEmptyScore() {
+      return { hGoals: null, aGoals: null, hPen: null, aPen: null, isReal: false, realLabel: '', homeId: null, awayId: null };
+    }
+
+    function loadCachedLiveResults() {
+      try {
+        const raw = localStorage.getItem(LIVE_CACHE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveCachedLiveResults(mapObj) {
+      try {
+        localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify(mapObj));
+      } catch (e) {
+        // Ignorar si el almacenamiento está deshabilitado
+      }
+    }
+
+    function initRealState(liveOverrides) {
+      const merged = { ...REAL_RESULTS_BASELINE, ...loadCachedLiveResults(), ...(liveOverrides || {}) };
+      state.scores = {};
+      MATCH_DEFS.forEach(def => {
+        if (merged[def.id]) {
+          state.scores[def.id] = { ...merged[def.id] };
+        } else {
+          state.scores[def.id] = createEmptyScore();
+        }
+      });
+    }
+
+    function formatShortDate(isoStr) {
+      try {
+        const d = new Date(isoStr);
+        if (Number.isNaN(d.getTime())) return 'En vivo';
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `Real · ${dd}/${mm}`;
+      } catch (e) {
+        return 'Real';
+      }
+    }
+
+    async function syncLiveRealResults(silent) {
+      const btn = document.getElementById('btn-load-real');
+      const icon = document.getElementById('icon-sync-real');
+      const label = document.getElementById('label-sync-real');
+
+      if (!silent && btn && label) {
+        btn.disabled = true;
+        label.textContent = 'Actualizando...';
+        if (icon) icon.classList.add('animate-spin');
+      }
+
+      const liveUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard?dates=20261120-20261215';
+      try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 7000) : null;
+        const resp = await fetch(liveUrl, controller ? { signal: controller.signal } : undefined);
+        if (timer) clearTimeout(timer);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const events = Array.isArray(data && data.events) ? data.events : [];
+
+        // Extraer partidos finalizados con ambos equipos reconocidos
+        const finishedMatches = [];
+        for (const ev of events) {
+          const comp = ev && Array.isArray(ev.competitions) ? ev.competitions[0] : null;
+          if (!comp) continue;
+          const completed = Boolean(comp.status && comp.status.type && comp.status.type.completed);
+          if (!completed) continue;
+          const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+          if (competitors.length < 2) continue;
+
+          const c0 = competitors[0];
+          const c1 = competitors[1];
+          const id0 = matchTeamId((c0.team && (c0.team.displayName || c0.team.shortDisplayName || c0.team.name)) || '');
+          const id1 = matchTeamId((c1.team && (c1.team.displayName || c1.team.shortDisplayName || c1.team.name)) || '');
+          if (!id0 || !id1 || id0 === id1) continue;
+
+          const g0 = parseInt(c0.score, 10);
+          const g1 = parseInt(c1.score, 10);
+          if (Number.isNaN(g0) || Number.isNaN(g1)) continue;
+
+          const p0 = c0.shootoutScore !== undefined && c0.shootoutScore !== null ? parseInt(c0.shootoutScore, 10) : null;
+          const p1 = c1.shootoutScore !== undefined && c1.shootoutScore !== null ? parseInt(c1.shootoutScore, 10) : null;
+
+          finishedMatches.push({
+            date: ev.date || comp.date || '',
+            scoresByTeam: { [id0]: g0, [id1]: g1 },
+            pensByTeam: {
+              [id0]: Number.isNaN(p0) ? null : p0,
+              [id1]: Number.isNaN(p1) ? null : p1
+            },
+            pairKey: [id0, id1].sort().join('-')
+          });
+        }
+
+        // Partir de la base verificada y aplicar cualquier resultado nuevo ronda por ronda
+        initRealState({});
+        const liveDiscovered = {};
+        let liveMatchedCount = 0;
+
+        ['octavos', 'cuartos', 'semis', 'final'].forEach(round => {
+          const resolved = computeBracket();
+          MATCH_DEFS.filter(d => d.round === round).forEach(def => {
+            const m = resolved[def.id];
+            if (!m.home || !m.away) return;
+            const pairKey = [m.home.id, m.away.id].sort().join('-');
+            const found = finishedMatches.find(fm => fm.pairKey === pairKey);
+            if (found) {
+              const entry = {
+                hGoals: found.scoresByTeam[m.home.id],
+                aGoals: found.scoresByTeam[m.away.id],
+                hPen: found.pensByTeam[m.home.id],
+                aPen: found.pensByTeam[m.away.id],
+                isReal: true,
+                realLabel: formatShortDate(found.date),
+                homeId: m.home.id,
+                awayId: m.away.id
+              };
+              state.scores[def.id] = entry;
+              liveDiscovered[def.id] = entry;
+              liveMatchedCount++;
+            }
+          });
+        });
+
+        if (Object.keys(liveDiscovered).length > 0) {
+          saveCachedLiveResults(liveDiscovered);
+        }
+        renderAll();
+
+        if (!silent) {
+          const totalConfirmed = Object.values(state.scores).filter(x => x && x.isReal).length;
+          if (liveMatchedCount > 0) {
+            showToast(`Actualizado en vivo: ${totalConfirmed} resultados reales confirmados.`);
+          } else {
+            showToast(`Cargados los ${totalConfirmed} resultados reales confirmados hasta ahora.`);
+          }
+        }
+      } catch (err) {
+        initRealState({});
+        renderAll();
+        if (!silent) {
+          const totalConfirmed = Object.values(state.scores).filter(x => x && x.isReal).length;
+          showToast(`Sin conexión en vivo: se cargaron los ${totalConfirmed} resultados reales confirmados.`);
+        }
+      } finally {
+        if (btn && label) {
+          btn.disabled = false;
+          label.textContent = 'Reales';
+          if (icon) icon.classList.remove('animate-spin');
+        }
+      }
+    }
+
+    // =========================================================================
+    // 3. MOTOR REGLAMENTARIO (LOCALÍA, DESEMPATE, PROPAGACIÓN)
+    // =========================================================================
+    // Compara dos equipos según Art. 14 (mejor puesto en Fase de Zonas; en Final si empatan puesto, Art. 16)
+    function compareSeedOrder(teamA, teamB) {
+      if (teamA.pos !== teamB.pos) return teamA.pos - teamB.pos;
+      if (teamA.zPts !== teamB.zPts) return teamB.zPts - teamA.zPts;
+      if (teamA.zGd !== teamB.zGd) return teamB.zGd - teamA.zGd;
+      if (teamA.zGf !== teamB.zGf) return teamB.zGf - teamA.zGf;
+      return teamA.zone.localeCompare(teamB.zone);
+    }
+
+    function resolveMatchPair(t1Id, t2Id) {
+      if (!t1Id || !t2Id) {
+        return { home: t1Id ? TEAMS[t1Id] : null, away: t2Id ? TEAMS[t2Id] : null };
+      }
+      const t1 = TEAMS[t1Id];
+      const t2 = TEAMS[t2Id];
+      if (compareSeedOrder(t1, t2) <= 0) {
+        return { home: t1, away: t2 };
+      }
+      return { home: t2, away: t1 };
+    }
+
+    function getMatchWinner(matchId, resolvedMap) {
+      const m = resolvedMap[matchId];
+      if (!m || !m.home || !m.away) return null;
+      const sc = state.scores[matchId];
+      if (!sc || sc.hGoals === null || sc.aGoals === null) return null;
+      if (sc.hGoals > sc.aGoals) return m.home.id;
+      if (sc.aGoals > sc.hGoals) return m.away.id;
+      // Empate en 90' + alargue -> penales
+      if (sc.hPen !== null && sc.aPen !== null && sc.hPen !== sc.aPen) {
+        return sc.hPen > sc.aPen ? m.home.id : m.away.id;
+      }
+      return null;
+    }
+
+    function computeBracket() {
+      const resolved = {};
+      MATCH_DEFS.forEach(def => {
+        let t1Id = null;
+        let t2Id = null;
+        if (def.fixedTeams) {
+          t1Id = def.fixedTeams[0];
+          t2Id = def.fixedTeams[1];
+        } else {
+          t1Id = getMatchWinner(def.sources[0], resolved);
+          t2Id = getMatchWinner(def.sources[1], resolved);
+        }
+        const pair = resolveMatchPair(t1Id, t2Id);
+        const sc = state.scores[def.id] || createEmptyScore();
+        const nextHomeId = pair.home ? pair.home.id : null;
+        const nextAwayId = pair.away ? pair.away.id : null;
+
+        // Si cambiaron los equipos del partido respecto al estado guardado, limpiar marcador obsoleto
+        if ((sc.homeId && sc.homeId !== nextHomeId) || (sc.awayId && sc.awayId !== nextAwayId)) {
+          state.scores[def.id] = { ...createEmptyScore(), homeId: nextHomeId, awayId: nextAwayId };
+        } else {
+          sc.homeId = nextHomeId;
+          sc.awayId = nextAwayId;
+          state.scores[def.id] = sc;
+        }
+
+        resolved[def.id] = {
+          def,
+          home: pair.home,
+          away: pair.away,
+          score: state.scores[def.id],
+          winnerId: null
+        };
+        resolved[def.id].winnerId = getMatchWinner(def.id, resolved);
+      });
+      return resolved;
+    }
+
+    // =========================================================================
+    // 4. MOTOR DE COPAS CONMEBOL 2027 (ART. 27 Y 28)
+    // =========================================================================
+    function computeCopas2027(clausuraChampId) {
+      const lib = [];
+      const libIds = new Set();
+
+      // 1. Boca Juniors: Campeón Copa Sudamericana 2026 (plaza adicional CONMEBOL)
+      lib.push({
+        id: 'BOC',
+        name: 'Boca Juniors',
+        slot: 'CONMEBOL (Camp. Sudamericana 2026)',
+        stage: 'Fase de Grupos',
+        confirmed: true
+      });
+      libIds.add('BOC');
+
+      // 2. Estudiantes (LP) si gana la Libertadores 2026 vs Palmeiras
+      if (state.estudiantesWinsLib) {
+        lib.push({
+          id: 'EST',
+          name: 'Estudiantes (LP)',
+          slot: 'CONMEBOL (Camp. Libertadores 2026)',
+          stage: 'Fase de Grupos',
+          confirmed: false,
+          simulated: true
+        });
+        libIds.add('EST');
+      }
+
+      // 3. ARG 1: Belgrano (Campeón Apertura 2026)
+      lib.push({
+        id: 'BEL',
+        name: 'Belgrano',
+        slot: 'ARG 1 (Campeón Apertura 2026)',
+        stage: 'Fase de Grupos',
+        confirmed: true
+      });
+      libIds.add('BEL');
+
+      // 4. ARG 2: Campeón Torneo Clausura 2026
+      let clausuraLiberatesAnual = false;
+      if (clausuraChampId) {
+        const champTeam = TEAMS[clausuraChampId];
+        if (!libIds.has(clausuraChampId)) {
+          lib.push({
+            id: clausuraChampId,
+            name: champTeam.name,
+            slot: 'ARG 2 (Campeón Clausura 2026)',
+            stage: 'Fase de Grupos',
+            simulated: true
+          });
+          libIds.add(clausuraChampId);
+        } else {
+          // Si Boca o Belgrano ganan el Clausura, ARG 2 pasa al siguiente de Tabla Anual (Art. 27.7)
+          clausuraLiberatesAnual = true;
+        }
+      } else {
+        lib.push({
+          id: null,
+          name: 'A definir (Campeón Clausura 2026)',
+          slot: 'ARG 2 (Campeón Clausura 2026)',
+          stage: 'Fase de Grupos',
+          pending: true
+        });
+      }
+
+      // 5. ARG 3: Platense (Copa Argentina 2026 — asegurado gane o pierda vs Boca)
+      lib.push({
+        id: 'PLA',
+        name: 'Platense',
+        slot: 'ARG 3 (Copa Argentina 2026)',
+        stage: 'Fase de Grupos',
+        confirmed: true
+      });
+      libIds.add('PLA');
+
+      // 6. Plazas por Tabla Anual (ARG 4, ARG 5 a Grupos; ARG 6 a Fase 2; +1 extra si ARG 2 fue liberado por Boca/Belgrano)
+      const anualSlotsNeeded = clausuraLiberatesAnual ? 4 : 3;
+      const anualLibLabels = clausuraLiberatesAnual
+        ? ['ARG 2 (Reasignado Tabla Anual)', 'ARG 4 (Tabla Anual)', 'ARG 5 (Tabla Anual)', 'ARG 6 (Tabla Anual)']
+        : ['ARG 4 (Tabla Anual)', 'ARG 5 (Tabla Anual)', 'ARG 6 (Tabla Anual)'];
+
+      let assignedAnualLib = 0;
+      for (const row of ANUAL_TABLE) {
+        if (row.id === 'PLA') continue;
+        if (assignedAnualLib >= anualSlotsNeeded) break;
+        if (!libIds.has(row.id)) {
+          const isRepechaje = assignedAnualLib === anualSlotsNeeded - 1;
+          lib.push({
+            id: row.id,
+            name: row.name,
+            slot: anualLibLabels[assignedAnualLib],
+            stage: isRepechaje ? 'Fase 2 (Repechaje)' : 'Fase de Grupos',
+            confirmed: !clausuraChampId && (row.id === 'ROS' || row.id === 'ARG' || row.id === 'IRV'),
+            simulated: Boolean(clausuraChampId)
+          });
+          libIds.add(row.id);
+          assignedAnualLib++;
+        }
+      }
+
+      // 7. Copa Sudamericana 2027: 6 mejores de Tabla Anual no clasificados a Libertadores
+      const sud = [];
+      const sudIds = new Set();
+      for (const row of ANUAL_TABLE) {
+        if (row.id === 'PLA') continue;
+        if (sud.length >= 6) break;
+        if (!libIds.has(row.id)) {
+          sud.push({
+            id: row.id,
+            name: row.name,
+            slot: `ARG ${sud.length + 1} (Tabla Anual · ${row.pts} pts)`,
+            pts: row.pts,
+            gd: row.gd
+          });
+          sudIds.add(row.id);
+        }
+      }
+
+      return { lib, sud, libIds, sudIds };
+    }
+
+    // =========================================================================
+    // 5. RENDERIZADO DE UI
+    // =========================================================================
+    function shieldSvg(team) {
+      if (!team) {
+        return `<div class="w-6 h-6 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center text-[9px] text-slate-500 font-bold shrink-0">?</div>`;
+      }
+      return `
+        <div class="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold shrink-0 border border-white/20 shadow-sm"
+             style="background: linear-gradient(135deg, ${team.c1} 55%, ${team.c2} 55%); color: ${team.c1 === '#111827' ? '#ffffff' : '#ffffff'}; text-shadow: 0 1px 2px rgba(0,0,0,0.85);">
+          ${team.short}
+        </div>
+      `;
+    }
+
+    function renderMatchCard(m) {
+      const { def, home, away, score, winnerId } = m;
+      const isReady = Boolean(home && away);
+      const isTied = isReady && score.hGoals !== null && score.aGoals !== null && score.hGoals === score.aGoals;
+      const needsPen = isTied && (score.hPen === null || score.aPen === null || score.hPen === score.aPen);
+
+      const sideAccent = def.side === 'A'
+        ? 'border-l-2 border-l-sky-500'
+        : def.side === 'B'
+          ? 'border-l-2 border-l-indigo-400'
+          : 'border-l-2 border-l-amber-400';
+
+      const venueText = def.neutral
+        ? 'Estadio Diego A. Maradona (La Plata) · Cancha Neutral'
+        : home
+          ? `${home.stadium}`
+          : 'Estadio a definir (mejor puesto en Zona)';
+
+      const statusBadge = score.isReal
+        ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold">${score.realLabel}</span>`
+        : winnerId
+          ? `<span class="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-semibold">Simulado</span>`
+          : needsPen
+            ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-semibold">Definir penales</span>`
+            : `<span class="text-[10px] text-slate-500 font-medium">${def.schedule}</span>`;
+
+      function teamRowHtml(team, role) {
+        const isHome = role === 'home';
+        const goals = isHome ? score.hGoals : score.aGoals;
+        const isWinner = team && winnerId === team.id;
+        const roleTag = isHome
+          ? (def.neutral ? `<span class="px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 text-[9px] font-bold">LOC. ORG.</span>` : `<span class="px-1 py-0.2 rounded bg-sky-500/20 text-sky-300 text-[9px] font-bold">LOCAL</span>`)
+          : '';
+        const seedBadge = team
+          ? `<span class="text-[10px] font-bold text-slate-400 bg-slate-800/90 px-1.5 py-0.5 rounded">${team.pos}${team.zone}</span>`
+          : '';
+
+        return `
+          <div class="flex items-center justify-between gap-2 p-2 rounded-lg border ${isWinner ? 'winner-row' : 'border-slate-800/90 bg-slate-900/50'}">
+            <div class="flex items-center gap-2 min-w-0">
+              ${shieldSvg(team)}
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${seedBadge}
+                  <span class="text-xs font-semibold truncate ${team ? (isWinner ? 'text-emerald-200' : 'text-slate-100') : 'text-slate-500 italic'}">
+                    ${team ? team.name : 'Por definir'}
+                  </span>
+                </div>
+                ${team && roleTag ? `<div class="mt-0.5">${roleTag}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" data-action="step" data-match="${def.id}" data-role="${role}" data-delta="-1"
+                ${!isReady ? 'disabled' : ''}
+                class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 text-xs font-bold flex items-center justify-center">−</button>
+              <input type="number" min="0" max="15" inputmode="numeric"
+                data-action="goal-input" data-match="${def.id}" data-role="${role}"
+                value="${goals !== null ? goals : ''}" placeholder="–"
+                ${!isReady ? 'disabled' : ''}
+                class="w-8 h-7 rounded bg-slate-950 border border-slate-700 text-center text-xs font-bold text-white focus:outline-none focus:border-sky-400 disabled:opacity-30">
+              <button type="button" data-action="step" data-match="${def.id}" data-role="${role}" data-delta="1"
+                ${!isReady ? 'disabled' : ''}
+                class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 text-xs font-bold flex items-center justify-center">+</button>
+            </div>
+          </div>
+        `;
+      }
+
+      let penSection = '';
+      if (isTied) {
+        penSection = `
+          <div class="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2">
+            <div class="flex items-center justify-between text-[10px] font-semibold text-amber-300">
+              <span>Empate tras 90' + alargue (30') → Penales</span>
+              ${needsPen ? '<span class="text-amber-200">Sin empate</span>' : ''}
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold text-slate-200">${home.short}</span>
+                <input type="number" min="0" max="20" inputmode="numeric"
+                  data-action="pen-input" data-match="${def.id}" data-role="home"
+                  value="${score.hPen !== null ? score.hPen : ''}" placeholder="0"
+                  class="w-9 h-7 rounded bg-slate-950 border border-amber-500/40 text-center text-xs font-bold text-amber-200 focus:outline-none focus:border-amber-400">
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold">vs</span>
+              <div class="flex items-center gap-1.5">
+                <input type="number" min="0" max="20" inputmode="numeric"
+                  data-action="pen-input" data-match="${def.id}" data-role="away"
+                  value="${score.aPen !== null ? score.aPen : ''}" placeholder="0"
+                  class="w-9 h-7 rounded bg-slate-950 border border-amber-500/40 text-center text-xs font-bold text-amber-200 focus:outline-none focus:border-amber-400">
+                <span class="text-[11px] font-bold text-slate-200">${away.short}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" data-action="quick-pen" data-match="${def.id}" data-winner="home"
+                class="px-2 py-1 rounded bg-slate-800/90 hover:bg-amber-500/20 text-[10px] font-semibold text-slate-200 truncate">
+                Pasa ${home.short} (4-3)
+              </button>
+              <button type="button" data-action="quick-pen" data-match="${def.id}" data-winner="away"
+                class="px-2 py-1 rounded bg-slate-800/90 hover:bg-amber-500/20 text-[10px] font-semibold text-slate-200 truncate">
+                Pasa ${away.short} (3-4)
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="match-card ${sideAccent} rounded-xl p-2.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] font-bold uppercase tracking-wide text-slate-400">${def.label}</span>
+            ${statusBadge}
+          </div>
+          <div class="space-y-1.5">
+            ${teamRowHtml(home, 'home')}
+            ${teamRowHtml(away, 'away')}
+          </div>
+          ${penSection}
+          <div class="flex items-center gap-1.5 pt-0.5 text-[10px] text-slate-400 truncate" title="${venueText}">
+            <svg class="w-3 h-3 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span class="truncate">${venueText}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderChampionBanner(resolved) {
+      const banner = document.getElementById('champion-banner');
+      const finalMatch = resolved.FIN;
+      const champId = finalMatch.winnerId;
+
+      if (champId) {
+        const champ = TEAMS[champId];
+        banner.innerHTML = `
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+              ${shieldSvg(champ)}
+            </div>
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Campeón Simulado · Torneo Clausura 2026</div>
+              <div class="text-lg sm:text-xl font-extrabold text-white">${champ.name} (${champ.pos}${champ.zone})</div>
+              <p class="text-xs text-slate-300">
+                Clasifica a <strong>Copa Libertadores 2027 (Fase de Grupos · ARG 2)</strong> y juega el <strong>Trofeo de Campeones 2026</strong> vs Belgrano (19/12).
+              </p>
+            </div>
+          </div>
+          <button type="button" id="btn-goto-copas" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition shrink-0">
+            Ver impacto en Copas 2027 →
+          </button>
+        `;
+        const gotoBtn = document.getElementById('btn-goto-copas');
+        if (gotoBtn) {
+          gotoBtn.addEventListener('click', () => switchTab('copas'));
+        }
+      } else {
+        const completedCount = MATCH_DEFS.filter(d => Boolean(resolved[d.id].winnerId)).length;
+        banner.innerHTML = `
+          <div class="space-y-0.5">
+            <div class="text-xs font-bold uppercase tracking-wider text-sky-400">Simulación en curso · ${completedCount} de 15 partidos definidos</div>
+            <p class="text-xs sm:text-sm text-slate-300">
+              El cuadro arranca vacío: cargá los marcadores manualmente o tocá <strong>Reales</strong> para traer los resultados confirmados.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-400 shrink-0">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 font-semibold text-slate-200">
+              Final: 12/12 · La Plata
+            </span>
+          </div>
+        `;
+      }
+    }
+
+    function renderCopasView(resolved) {
+      const champId = resolved.FIN.winnerId;
+      const { lib, sud, libIds, sudIds } = computeCopas2027(champId);
+
+      // Update toggle buttons
+      const btnPal = document.getElementById('btn-lib-palmeiras');
+      const btnEst = document.getElementById('btn-lib-estudiantes');
+      if (state.estudiantesWinsLib) {
+        btnEst.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 text-white transition';
+        btnPal.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition';
+      } else {
+        btnPal.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white transition';
+        btnEst.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition';
+      }
+
+      // Summary note
+      const noteEl = document.getElementById('copas-summary-note');
+      const champName = champId ? TEAMS[champId].name : 'Aún sin definir';
+      const extraText = state.estudiantesWinsLib
+        ? 'Con <strong>Estudiantes (LP) campeón de la Libertadores 2026</strong>, Argentina suma 8 plazas en Libertadores y se libera un cupo extra en la Sudamericana.'
+        : 'Si <strong>Palmeiras gana la Libertadores 2026</strong>, Estudiantes (LP) mantiene su cupo en Sudamericana gracias al título de Boca en Barranquilla.';
+      noteEl.innerHTML = `<strong>Escenario activo:</strong> Campeón Clausura = <span class="text-amber-300 font-bold">${champName}</span> · ${extraText}`;
+
+      // Libertadores list
+      document.getElementById('lib-count-badge').textContent = `${lib.length} plazas`;
+      document.getElementById('lib-list').innerHTML = lib.map((item, idx) => `
+        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/70 border ${item.pending ? 'border-amber-500/30' : 'border-emerald-500/20'}">
+          <div class="min-w-0">
+            <div class="text-xs sm:text-sm font-bold ${item.pending ? 'text-amber-300' : 'text-white'} truncate">
+              ${idx + 1}. ${item.name}
+            </div>
+            <div class="text-[11px] text-slate-400 truncate">${item.slot}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${item.stage.includes('Fase 2') ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'}">
+            ${item.stage}
+          </span>
+        </div>
+      `).join('');
+
+      // Sudamericana list
+      document.getElementById('sud-list').innerHTML = sud.map((item, idx) => `
+        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/70 border border-sky-500/20">
+          <div class="min-w-0">
+            <div class="text-xs sm:text-sm font-bold text-white truncate">${idx + 1}. ${item.name}</div>
+            <div class="text-[11px] text-slate-400 truncate">${item.slot}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 bg-sky-500/15 text-sky-300 border border-sky-500/30">
+            Fase de Grupos
+          </span>
+        </div>
+      `).join('');
+
+      // Tabla Anual table
+      const tbody = document.getElementById('anual-table-body');
+      tbody.innerHTML = ANUAL_TABLE.map((row, idx) => {
+        const rankLabel = row.id === 'PLA' ? '24.º' : `${idx + 1}.º`;
+        let badge = `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-semibold">Sin copa</span>`;
+        if (libIds.has(row.id)) {
+          const libEntry = lib.find(x => x.id === row.id);
+          const isF2 = libEntry && libEntry.stage.includes('Fase 2');
+          badge = `<span class="px-2 py-0.5 rounded ${isF2 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'} text-[10px] font-bold">Libertadores (${isF2 ? 'Fase 2' : 'Grupos'})</span>`;
+        } else if (sudIds.has(row.id)) {
+          badge = `<span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">Sudamericana 2027</span>`;
+        }
+        return `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-2 pr-2 font-bold text-slate-400">${rankLabel}</td>
+            <td class="py-2 pr-3">
+              <div class="font-semibold text-slate-100">${row.name}</div>
+              ${row.note ? `<div class="text-[10px] text-slate-400">${row.note}</div>` : ''}
+            </td>
+            <td class="py-2 px-2 text-center font-bold text-white">${row.pts}</td>
+            <td class="py-2 px-2 text-center text-slate-300">${row.gd > 0 ? '+' + row.gd : row.gd}</td>
+            <td class="py-2 pl-2">${badge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderZonesTables() {
+      const zonaA = Object.values(TEAMS).filter(t => t.zone === 'A').sort((a, b) => a.pos - b.pos);
+      const zonaB = Object.values(TEAMS).filter(t => t.zone === 'B').sort((a, b) => a.pos - b.pos);
+
+      function buildRows(list) {
+        return list.map(t => `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-2 pr-2 font-bold text-slate-300">${t.pos}.º</td>
+            <td class="py-2 pr-2 font-semibold text-white flex items-center gap-2">${shieldSvg(t)}<span>${t.name}</span></td>
+            <td class="py-2 px-1.5 text-center font-bold text-white">${t.zPts}</td>
+            <td class="py-2 px-1.5 text-center text-slate-300">${t.zGd > 0 ? '+' + t.zGd : t.zGd}</td>
+            <td class="py-2 px-1.5 text-center text-slate-400">${t.zGf}</td>
+            <td class="py-2 pl-2 text-slate-400">${t.stadium}</td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('zona-a-body').innerHTML = buildRows(zonaA);
+      document.getElementById('zona-b-body').innerHTML = buildRows(zonaB);
+    }
+
+    function renderAll() {
+      const resolved = computeBracket();
+      renderChampionBanner(resolved);
+
+      document.getElementById('col-octavos').innerHTML = MATCH_DEFS
+        .filter(d => d.round === 'octavos')
+        .map(d => renderMatchCard(resolved[d.id])).join('');
+
+      document.getElementById('col-cuartos').innerHTML = MATCH_DEFS
+        .filter(d => d.round === 'cuartos')
+        .map(d => renderMatchCard(resolved[d.id])).join('');
+
+      document.getElementById('col-semis').innerHTML = MATCH_DEFS
+        .filter(d => d.round === 'semis')
+        .map(d => renderMatchCard(resolved[d.id])).join('');
+
+      document.getElementById('col-final').innerHTML = MATCH_DEFS
+        .filter(d => d.round === 'final')
+        .map(d => renderMatchCard(resolved[d.id])).join('');
+
+      renderCopasView(resolved);
+    }
+
+    // =========================================================================
+    // 6. INTERACCIONES Y EVENTOS
+    // =========================================================================
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      box.textContent = msg;
+      box.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => box.classList.add('hidden'), 2600);
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      ['bracket', 'copas', 'rules'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tabName);
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.toggle('tab-btn-active', t === tabName);
+        btn.classList.toggle('tab-btn-inactive', t !== tabName);
+      });
+    }
+
+    function updateGoal(matchId, role, val) {
+      const sc = state.scores[matchId] || createEmptyScore();
+      const parsed = val === '' ? null : Math.max(0, Math.min(15, parseInt(val, 10)));
+      if (role === 'home') sc.hGoals = Number.isNaN(parsed) ? null : parsed;
+      else sc.aGoals = Number.isNaN(parsed) ? null : parsed;
+      sc.isReal = false;
+      sc.realLabel = '';
+      if (sc.hGoals !== sc.aGoals) {
+        sc.hPen = null;
+        sc.aPen = null;
+      }
+      state.scores[matchId] = sc;
+      renderAll();
+    }
+
+    function stepGoal(matchId, role, delta) {
+      const sc = state.scores[matchId] || createEmptyScore();
+      const curr = role === 'home' ? sc.hGoals : sc.aGoals;
+      const other = role === 'home' ? sc.aGoals : sc.hGoals;
+      let next;
+      if (curr === null) {
+        next = delta > 0 ? 1 : 0;
+        if (other === null) {
+          if (role === 'home') sc.aGoals = 0;
+          else sc.hGoals = 0;
+        }
+      } else {
+        next = Math.max(0, Math.min(15, curr + delta));
+      }
+      if (role === 'home') sc.hGoals = next;
+      else sc.aGoals = next;
+      sc.isReal = false;
+      sc.realLabel = '';
+      if (sc.hGoals !== sc.aGoals) {
+        sc.hPen = null;
+        sc.aPen = null;
+      }
+      state.scores[matchId] = sc;
+      renderAll();
+    }
+
+    function updatePen(matchId, role, val) {
+      const sc = state.scores[matchId] || createEmptyScore();
+      const parsed = val === '' ? null : Math.max(0, Math.min(20, parseInt(val, 10)));
+      if (role === 'home') sc.hPen = Number.isNaN(parsed) ? null : parsed;
+      else sc.aPen = Number.isNaN(parsed) ? null : parsed;
+      sc.isReal = false;
+      sc.realLabel = '';
+      state.scores[matchId] = sc;
+      renderAll();
+    }
+
+    function quickPen(matchId, winnerRole) {
+      const sc = state.scores[matchId] || createEmptyScore();
+      sc.hPen = winnerRole === 'home' ? 4 : 3;
+      sc.aPen = winnerRole === 'away' ? 4 : 3;
+      sc.isReal = false;
+      sc.realLabel = '';
+      state.scores[matchId] = sc;
+      renderAll();
+    }
+
+    function simulateRemainingRandom() {
+      // Simular ronda por ronda respetando resultados ya ingresados
+      ['octavos', 'cuartos', 'semis', 'final'].forEach(round => {
+        const resolved = computeBracket();
+        MATCH_DEFS.filter(d => d.round === round).forEach(def => {
+          const m = resolved[def.id];
+          if (!m.home || !m.away) return;
+          if (m.winnerId) return; // Mantener ya definidos
+          const hg = Math.floor(Math.random() * 4);
+          const ag = Math.floor(Math.random() * 4);
+          const sc = state.scores[def.id] || createEmptyScore();
+          sc.hGoals = hg;
+          sc.aGoals = ag;
+          sc.isReal = false;
+          sc.realLabel = '';
+          if (hg === ag) {
+            const homeWinsPen = Math.random() < 0.55;
+            sc.hPen = homeWinsPen ? 4 : 3;
+            sc.aPen = homeWinsPen ? 3 : 4;
+          } else {
+            sc.hPen = null;
+            sc.aPen = null;
+          }
+          state.scores[def.id] = sc;
+        });
+      });
+      renderAll();
+      showToast('Se simularon todos los cruces pendientes hasta la Final.');
+    }
+
+    function resetAllMatches() {
+      state.scores = {};
+      MATCH_DEFS.forEach(def => {
+        state.scores[def.id] = createEmptyScore();
+      });
+      renderAll();
+      showToast('Cuadro reiniciado desde cero.');
+    }
+
+    // Event delegation en el contenedor de playoffs
+    document.getElementById('view-bracket').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn || btn.disabled) return;
+      const action = btn.dataset.action;
+      const matchId = btn.dataset.match;
+      if (action === 'step') {
+        stepGoal(matchId, btn.dataset.role, parseInt(btn.dataset.delta, 10));
+      } else if (action === 'quick-pen') {
+        quickPen(matchId, btn.dataset.winner);
+      }
+    });
+
+    document.getElementById('view-bracket').addEventListener('change', (e) => {
+      const input = e.target.closest('input[data-action]');
+      if (!input) return;
+      if (input.dataset.action === 'goal-input') {
+        updateGoal(input.dataset.match, input.dataset.role, input.value);
+      } else if (input.dataset.action === 'pen-input') {
+        updatePen(input.dataset.match, input.dataset.role, input.value);
+      }
+    });
+
+    // Header buttons & tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    document.getElementById('btn-load-real').addEventListener('click', () => {
+      syncLiveRealResults(false);
+    });
+
+    document.getElementById('btn-sim-random').addEventListener('click', simulateRemainingRandom);
+    document.getElementById('btn-reset-all').addEventListener('click', resetAllMatches);
+
+    document.getElementById('btn-lib-palmeiras').addEventListener('click', () => {
+      state.estudiantesWinsLib = false;
+      renderAll();
+    });
+    document.getElementById('btn-lib-estudiantes').addEventListener('click', () => {
+      state.estudiantesWinsLib = true;
+      renderAll();
+    });
+
+    // Inicialización: arranca completamente vacío ("pelado") hasta que el usuario simule o haga clic en "Reales"
+    state.scores = {};
+    MATCH_DEFS.forEach(def => {
+      state.scores[def.id] = createEmptyScore();
+    });
+    renderZonesTables();
+    renderAll();
+  </script>
+</body>
+</html>
