@@ -51,6 +51,51 @@
       background: rgba(51, 65, 85, 0.9);
       color: #ffffff;
     }
+    /* Fullscreen horizontal bracket overlay */
+    #visual-fs-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: #0b1120;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #visual-fs-overlay.fs-open {
+      display: flex;
+    }
+    #visual-fs-stage {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    #visual-fs-stage.fs-rotated {
+      width: 100vh;
+      height: 100vw;
+      transform: rotate(90deg);
+      transform-origin: center center;
+      padding: 6px;
+    }
+    #visual-fs-mount {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #visual-fs-mount svg {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    }
   </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-sky-500/30">
@@ -95,6 +140,9 @@
       <!-- Navigation Tabs -->
       <nav class="flex flex-wrap items-center gap-1.5" aria-label="Vistas principales">
         <button id="tab-bracket" type="button" data-tab="bracket" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-active">
+          Resultados
+        </button>
+        <button id="tab-visual" type="button" data-tab="visual" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-inactive">
           Cuadro de Playoffs
         </button>
         <button id="tab-copas" type="button" data-tab="copas" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition tab-btn-inactive">
@@ -171,6 +219,34 @@
           </div>
           <div id="col-final" class="space-y-3"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1B: CUADRO VISUAL DE PLAYOFFS (ESTILO CLARO Y SIMÉTRICO) -->
+    <section id="view-visual" class="hidden space-y-4">
+      <div class="glass-card rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-sm sm:text-base font-bold text-white">Cuadro Visual de Playoffs — Actualización en Vivo</h2>
+          <p class="text-xs text-slate-400">
+            Se actualiza automáticamente con todo lo que cargues en <strong>Resultados</strong> o al tocar <strong>Reales</strong>.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-visual-fullscreen" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            Pantalla completa
+          </button>
+          <button id="btn-goto-results" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 transition">
+            Editar en Resultados
+          </button>
+          <button id="btn-download-png" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-slate-950 hover:bg-sky-400 transition">
+            Descargar PNG
+          </button>
+        </div>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-700/80 shadow-2xl bg-[#f4f7fb]">
+        <div id="visual-bracket-mount" class="w-full"></div>
       </div>
     </section>
 
@@ -310,6 +386,26 @@
       </div>
     </section>
   </main>
+
+  <!-- Fullscreen Horizontal Modal for Cuadro de Playoffs -->
+  <div id="visual-fs-overlay" role="dialog" aria-modal="true" aria-label="Cuadro de Playoffs en pantalla completa">
+    <div id="visual-fs-stage">
+      <div class="relative w-full h-full flex items-center justify-center">
+        <div class="absolute top-2 right-2 z-20 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur px-2 py-1.5 rounded-xl border border-slate-700/80 shadow-lg">
+          <button id="btn-fs-real" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition">
+            Reales
+          </button>
+          <button id="btn-fs-png" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+            PNG
+          </button>
+          <button id="btn-fs-close" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-500/20 text-red-200 border border-red-500/40 hover:bg-red-500/35 transition">
+            Salir ✕
+          </button>
+        </div>
+        <div id="visual-fs-mount"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // =========================================================================
@@ -1124,6 +1220,362 @@
       document.getElementById('zona-b-body').innerHTML = buildRows(zonaB);
     }
 
+    // =========================================================================
+    // 5B. CUADRO VISUAL SIMÉTRICO (SVG RESPONSIVE ESTILO EDITORIAL CLARO)
+    // =========================================================================
+    function escXml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function shortClubLabel(team) {
+      if (!team) return 'Por definir';
+      const map = {
+        VEL: 'Vélez',
+        ARG: 'Argentinos',
+        DYJ: 'Defensa y Just.',
+        BAR: 'Barracas C.',
+        IRV: 'Ind. Rivadavia',
+        NOB: "Newell's",
+        GYM: 'Gimnasia (M)',
+        GLP: 'Gimnasia (LP)'
+      };
+      return map[team.id] || team.name;
+    }
+
+    function formatScoreText(goals, pen) {
+      if (goals === null || goals === undefined) return '';
+      if (pen !== null && pen !== undefined) return `${goals} (${pen})`;
+      return String(goals);
+    }
+
+    function renderVisualBracket(resolved) {
+      const mount = document.getElementById('visual-bracket-mount');
+      if (!mount) return;
+
+      const completedCount = MATCH_DEFS.filter(d => Boolean(resolved[d.id].winnerId)).length;
+      const realCount = MATCH_DEFS.filter(d => resolved[d.id].score && resolved[d.id].score.isReal).length;
+      const subText = completedCount === 0
+        ? 'CUADRO DE PLAYOFFS · OCTAVOS A FINAL'
+        : realCount === completedCount
+          ? `CUADRO DE PLAYOFFS · ${completedCount} RESULTADOS REALES CONFIRMADOS`
+          : `CUADRO DE PLAYOFFS · ${completedCount} DE 15 CRUCES DEFINIDOS`;
+
+      function svgClubBadge(team, cx, cy) {
+        if (!team) {
+          return `<circle cx="${cx}" cy="${cy}" r="11" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1"/>
+                  <text x="${cx}" y="${cy + 3.5}" text-anchor="middle" font-size="9" font-weight="700" fill="#94a3b8">?</text>`;
+        }
+        return `
+          <g>
+            <circle cx="${cx}" cy="${cy}" r="12" fill="${team.c1}" stroke="#ffffff" stroke-width="1.5"/>
+            <path d="M ${cx} ${cy - 12} A 12 12 0 0 1 ${cx} ${cy + 12} Z" fill="${team.c2}" fill-opacity="0.32"/>
+            <text x="${cx}" y="${cy + 3.5}" text-anchor="middle" font-size="8" font-weight="800" fill="#ffffff" style="paint-order:stroke;stroke:#0f172a;stroke-width:2px;stroke-linejoin:round;">${escXml(team.short)}</text>
+          </g>
+        `;
+      }
+
+      function renderOctCard(matchId, x, y, w, h, side) {
+        const m = resolved[matchId];
+        const { def, home, away, score, winnerId } = m;
+        const hWin = Boolean(winnerId && home && winnerId === home.id);
+        const aWin = Boolean(winnerId && away && winnerId === away.id);
+        const hLose = Boolean(winnerId && !hWin);
+        const aLose = Boolean(winnerId && !aWin);
+
+        const hSc = formatScoreText(score.hGoals, score.hPen);
+        const aSc = formatScoreText(score.aGoals, score.aPen);
+
+        const topTag = score.isReal ? score.realLabel.replace('Real · ', '') : (winnerId ? 'Simulado' : def.schedule);
+        const rowH = h / 2;
+
+        function rowSvg(team, ry, isWin, isLose, scText) {
+          const textColor = isLose ? '#94a3b8' : '#0f172a';
+          const seedBg = isLose ? '#f1f5f9' : '#e0f2fe';
+          const seedCol = isLose ? '#94a3b8' : '#0369a1';
+          const opacity = isLose ? '0.68' : '1';
+          const pillW = scText.length > 2 ? 40 : 26;
+          const pillBg = isWin ? '#16a34a' : '#94a3b8';
+          const pillTxt = '#ffffff';
+          const cy = ry + rowH / 2;
+
+          if (side === 'left') {
+            return `
+              <g opacity="${opacity}">
+                ${svgClubBadge(team, x + 19, cy)}
+                <rect x="${x + 36}" y="${cy - 9}" width="24" height="18" rx="4" fill="${seedBg}"/>
+                <text x="${x + 48}" y="${cy + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="${seedCol}">${team ? team.pos + team.zone : ''}</text>
+                <text x="${x + 66}" y="${cy + 4.5}" font-size="13.5" font-weight="${isWin ? '800' : '600'}" fill="${textColor}">${escXml(shortClubLabel(team))}</text>
+                ${scText !== '' ? `
+                  <rect x="${x + w - pillW - 6}" y="${cy - 12}" width="${pillW}" height="24" rx="5" fill="${pillBg}"/>
+                  <text x="${x + w - pillW / 2 - 6}" y="${cy + 4.5}" text-anchor="middle" font-size="${scText.length > 2 ? '11.5' : '13'}" font-weight="800" fill="${pillTxt}">${escXml(scText)}</text>
+                ` : ''}
+              </g>
+            `;
+          } else {
+            return `
+              <g opacity="${opacity}">
+                <rect x="${x + 6}" y="${cy - 9}" width="24" height="18" rx="4" fill="${seedBg}"/>
+                <text x="${x + 18}" y="${cy + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="${seedCol}">${team ? team.pos + team.zone : ''}</text>
+                <text x="${x + 36}" y="${cy + 4.5}" font-size="13.5" font-weight="${isWin ? '800' : '600'}" fill="${textColor}">${escXml(shortClubLabel(team))}</text>
+                ${scText !== '' ? `
+                  <rect x="${x + w - 34 - pillW}" y="${cy - 12}" width="${pillW}" height="24" rx="5" fill="${pillBg}"/>
+                  <text x="${x + w - 34 - pillW / 2}" y="${cy + 4.5}" text-anchor="middle" font-size="${scText.length > 2 ? '11.5' : '13'}" font-weight="800" fill="${pillTxt}">${escXml(scText)}</text>
+                ` : ''}
+                ${svgClubBadge(team, x + w - 18, cy)}
+              </g>
+            `;
+          }
+        }
+
+        return `
+          <g>
+            <rect x="${x + w / 2 - 46}" y="${y - 18}" width="92" height="16" rx="6" fill="#e2e8f0"/>
+            <text x="${x + w / 2}" y="${y - 6.5}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#334155">${escXml(topTag)}</text>
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${winnerId ? '#cbd5e1' : '#dbe4f0'}" stroke-width="1.5" filter="url(#cardShadow)"/>
+            <line x1="${x + 8}" y1="${y + rowH}" x2="${x + w - 8}" y2="${y + rowH}" stroke="#e2e8f0" stroke-width="1"/>
+            ${rowSvg(home, y, hWin, hLose, hSc)}
+            ${rowSvg(away, y + rowH, aWin, aLose, aSc)}
+          </g>
+        `;
+      }
+
+      function renderMidCard(matchId, x, y, w, h, isFinal) {
+        const m = resolved[matchId];
+        const { home, away, score, winnerId } = m;
+        const hasAny = Boolean(home || away);
+        const bothReady = Boolean(home && away);
+        const rowH = h / 2;
+
+        if (!hasAny && !isFinal) {
+          return `
+            <g>
+              <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#cardShadow)"/>
+              <rect x="${x + 3}" y="${y + 3}" width="18" height="${h - 6}" rx="6" fill="#eef4fb"/>
+              <rect x="${x + w - 21}" y="${y + 3}" width="18" height="${h - 6}" rx="6" fill="#eef4fb"/>
+              <text x="${x + w / 2}" y="${y + h / 2 + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b">Por definir</text>
+            </g>
+          `;
+        }
+
+        const borderCol = isFinal ? '#d97706' : (bothReady ? '#0ea5e9' : '#cbd5e1');
+        const hWin = Boolean(winnerId && home && winnerId === home.id);
+        const aWin = Boolean(winnerId && away && winnerId === away.id);
+        const hLose = Boolean(winnerId && !hWin);
+        const aLose = Boolean(winnerId && !aWin);
+        const hSc = formatScoreText(score.hGoals, score.hPen);
+        const aSc = formatScoreText(score.aGoals, score.aPen);
+
+        function midRow(team, ry, isHome, isWin, isLose, scText) {
+          const cy = ry + rowH / 2;
+          if (!team) {
+            return `<text x="${x + w / 2}" y="${cy + 4.5}" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8" font-style="italic">Por definir</text>`;
+          }
+          const pillW = scText.length > 2 ? 36 : 24;
+          const opacity = isLose ? '0.62' : '1';
+          return `
+            <g opacity="${opacity}">
+              ${svgClubBadge(team, x + 18, cy)}
+              <text x="${x + 35}" y="${cy + 4}" font-size="11" font-weight="800" fill="#0284c7">${team.pos}${team.zone}</text>
+              <text x="${x + 56}" y="${cy + 4.5}" font-size="12.5" font-weight="${isWin ? '800' : '700'}" fill="${isLose ? '#94a3b8' : '#0f172a'}">${escXml(shortClubLabel(team))}</text>
+              ${scText !== '' ? `
+                <rect x="${x + w - pillW - 6}" y="${cy - 11}" width="${pillW}" height="22" rx="5" fill="${isWin ? '#16a34a' : '#94a3b8'}"/>
+                <text x="${x + w - pillW / 2 - 6}" y="${cy + 4}" text-anchor="middle" font-size="${scText.length > 2 ? '10.5' : '12'}" font-weight="800" fill="#ffffff">${escXml(scText)}</text>
+              ` : ''}
+            </g>
+          `;
+        }
+
+        const localBadge = (!isFinal && home)
+          ? `<rect x="${x + w - 48}" y="${y - 11}" width="44" height="15" rx="4" fill="#0ea5e9"/>
+             <text x="${x + w - 26}" y="${y - 0.5}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#ffffff">LOCAL</text>`
+          : '';
+
+        return `
+          <g>
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${borderCol}" stroke-width="${bothReady || isFinal ? '2.2' : '1.5'}" filter="url(#cardShadow)"/>
+            <line x1="${x + 8}" y1="${y + rowH}" x2="${x + w - 8}" y2="${y + rowH}" stroke="${isFinal ? '#fde68a' : '#e2e8f0'}" stroke-width="1.2"/>
+            ${midRow(home, y, true, hWin, hLose, hSc)}
+            ${midRow(away, y + rowH, false, aWin, aLose, aSc)}
+            ${localBadge}
+          </g>
+        `;
+      }
+
+      const champId = resolved.FIN.winnerId;
+      const champTeam = champId ? TEAMS[champId] : null;
+
+      // Symmetrical 1376x768 coordinate system matching 123096.jpg
+      const svgMarkup = `
+        <svg id="playoff-bracket-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1376 768" class="w-full h-auto block select-none">
+          <defs>
+            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f1f7fe"/>
+              <stop offset="50%" stop-color="#f8fafc"/>
+              <stop offset="100%" stop-color="#eaf4fd"/>
+            </linearGradient>
+            <linearGradient id="trophyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fde047"/>
+              <stop offset="50%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#b45309"/>
+            </linearGradient>
+            <filter id="cardShadow" x="-8%" y="-8%" width="116%" height="122%">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.09"/>
+            </filter>
+          </defs>
+
+          <!-- Background & subtle geometric accents -->
+          <rect width="1376" height="768" fill="url(#bgGrad)"/>
+          <polygon points="1220,0 1376,0 1376,165 1295,125" fill="#bae6fd" opacity="0.45"/>
+          <polygon points="0,330 85,430 0,540" fill="#bae6fd" opacity="0.35"/>
+
+          <!-- Header -->
+          <text x="688" y="66" text-anchor="middle" font-family="Inter, sans-serif" font-size="44" font-weight="900" letter-spacing="-0.5">
+            <tspan fill="#0f172a">TORNEO </tspan>
+            <tspan fill="#38bdf8">CLAUSURA LPF 2026</tspan>
+          </text>
+          <text x="688" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#0f172a" letter-spacing="0.4">
+            ${escXml(subText)}
+          </text>
+
+          <!-- Round Headings -->
+          <g font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#0f172a" text-anchor="middle">
+            <text x="131" y="148">OCTAVOS</text>
+            <text x="336" y="148">CUARTOS</text>
+            <text x="512" y="148">SEMIFINAL</text>
+            <text x="688" y="148">FINAL</text>
+            <text x="864" y="148">SEMIFINAL</text>
+            <text x="1040" y="148">CUARTOS</text>
+            <text x="1245" y="148">OCTAVOS</text>
+          </g>
+
+          <!-- Connector Lines (Exact Symmetrical Non-Overlapping) -->
+          <g fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Left O1+O2 -> Q1 -->
+            <path d="M 238 218 H 247 V 286 H 256"/>
+            <path d="M 238 358 H 247 V 286"/>
+            <!-- Left O3+O4 -> Q2 -->
+            <path d="M 238 504 H 247 V 574 H 256"/>
+            <path d="M 238 644 H 247 V 574"/>
+            <!-- Left Q1+Q2 -> SF1 -->
+            <path d="M 416 286 H 425 V 430 H 434"/>
+            <path d="M 416 574 H 425 V 430"/>
+            <!-- Left SF1 -> FIN -->
+            <path d="M 590 430 H 606"/>
+
+            <!-- Right O5+O6 -> Q3 -->
+            <path d="M 1138 218 H 1129 V 286 H 1120"/>
+            <path d="M 1138 358 H 1129 V 286"/>
+            <!-- Right O7+O8 -> Q4 -->
+            <path d="M 1138 504 H 1129 V 574 H 1120"/>
+            <path d="M 1138 644 H 1129 V 574"/>
+            <!-- Right Q3+Q4 -> SF2 -->
+            <path d="M 960 286 H 951 V 430 H 942"/>
+            <path d="M 960 574 H 951 V 430"/>
+            <!-- Right SF2 -> FIN -->
+            <path d="M 786 430 H 770"/>
+          </g>
+
+          <!-- Left Octavos -->
+          ${renderOctCard('O1', 24, 178, 214, 80, 'left')}
+          ${renderOctCard('O2', 24, 318, 214, 80, 'left')}
+          ${renderOctCard('O3', 24, 464, 214, 80, 'left')}
+          ${renderOctCard('O4', 24, 604, 214, 80, 'left')}
+
+          <!-- Left Cuartos & Semi -->
+          ${renderMidCard('Q1', 256, 246, 160, 80, false)}
+          ${renderMidCard('Q2', 256, 534, 160, 80, false)}
+          ${renderMidCard('SF1', 434, 390, 156, 80, false)}
+
+          <!-- Right Octavos -->
+          ${renderOctCard('O5', 1138, 178, 214, 80, 'right')}
+          ${renderOctCard('O6', 1138, 318, 214, 80, 'right')}
+          ${renderOctCard('O7', 1138, 464, 214, 80, 'right')}
+          ${renderOctCard('O8', 1138, 604, 214, 80, 'right')}
+
+          <!-- Right Cuartos & Semi -->
+          ${renderMidCard('Q3', 960, 246, 160, 80, false)}
+          ${renderMidCard('Q4', 960, 534, 160, 80, false)}
+          ${renderMidCard('SF2', 786, 390, 156, 80, false)}
+
+          <!-- Center Trophy -->
+          <g transform="translate(652, 204)">
+            <path d="M 14 14 H 58 V 44 C 58 60 48 70 36 72 C 24 70 14 60 14 44 Z" fill="url(#trophyGrad)" stroke="#b45309" stroke-width="1.5"/>
+            <path d="M 14 20 H 4 C 4 36 10 44 17 44" fill="none" stroke="#d97706" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M 58 20 H 68 C 68 36 62 44 55 44" fill="none" stroke="#d97706" stroke-width="3.5" stroke-linecap="round"/>
+            <rect x="31" y="72" width="10" height="14" fill="#d97706"/>
+            <rect x="20" y="86" width="32" height="7" rx="2" fill="#b45309"/>
+            <rect x="16" y="93" width="40" height="6" rx="2" fill="#475569"/>
+            <text x="36" y="42" text-anchor="middle" font-size="10" font-weight="900" fill="#78350f">LPF</text>
+          </g>
+
+          <!-- Center Final Card -->
+          <text x="688" y="366" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="900" fill="#0f172a">GRAN FINAL</text>
+          ${renderMidCard('FIN', 606, 384, 164, 86, true)}
+          <text x="688" y="492" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#334155">Sábado 12/12 · Estadio Diego</text>
+          <text x="688" y="508" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#334155">A. Maradona (La Plata)</text>
+
+          ${champTeam ? `
+            <g>
+              <rect x="580" y="530" width="216" height="44" rx="12" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+              <text x="688" y="548" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#b45309">CAMPEÓN CLAUSURA 2026</text>
+              <text x="688" y="566" text-anchor="middle" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#0f172a">${escXml(champTeam.name)}</text>
+            </g>
+          ` : ''}
+
+          <!-- Footer Bar -->
+          <rect x="0" y="724" width="1376" height="44" fill="#e2ecf7"/>
+          <text x="688" y="751" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#0f172a">
+            Localía: estadio del mejor ubicado en Fase de Zonas (8vos, 4tos y Semis) · Empate: alargue 30' y penales
+          </text>
+        </svg>
+      `;
+
+      mount.innerHTML = svgMarkup;
+      const fsMount = document.getElementById('visual-fs-mount');
+      if (fsMount) {
+        fsMount.innerHTML = svgMarkup.replace('id="playoff-bracket-svg"', 'id="playoff-bracket-svg-fs"');
+      }
+    }
+
+    function downloadVisualBracketPng() {
+      const svgEl = document.getElementById('playoff-bracket-svg');
+      if (!svgEl) return;
+      try {
+        const xml = new XMLSerializer().serializeToString(svgEl);
+        const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1376;
+          canvas.height = 768;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#f4f7fb';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          const a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = 'cuadro_playoffs_clausura_2026.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('Imagen PNG del cuadro descargada.');
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          showToast('No se pudo exportar la imagen en este navegador.');
+        };
+        img.src = url;
+      } catch (e) {
+        showToast('No se pudo exportar la imagen en este navegador.');
+      }
+    }
+
     function renderAll() {
       const resolved = computeBracket();
       renderChampionBanner(resolved);
@@ -1144,6 +1596,7 @@
         .filter(d => d.round === 'final')
         .map(d => renderMatchCard(resolved[d.id])).join('');
 
+      renderVisualBracket(resolved);
       renderCopasView(resolved);
     }
 
@@ -1161,7 +1614,7 @@
 
     function switchTab(tabName) {
       state.activeTab = tabName;
-      ['bracket', 'copas', 'rules'].forEach(t => {
+      ['bracket', 'visual', 'copas', 'rules'].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tabName);
         const btn = document.getElementById(`tab-${t}`);
         btn.classList.toggle('tab-btn-active', t === tabName);
@@ -1304,6 +1757,87 @@
 
     document.getElementById('btn-sim-random').addEventListener('click', simulateRemainingRandom);
     document.getElementById('btn-reset-all').addEventListener('click', resetAllMatches);
+    document.getElementById('btn-goto-results').addEventListener('click', () => switchTab('bracket'));
+    document.getElementById('btn-download-png').addEventListener('click', downloadVisualBracketPng);
+
+    let isVisualFullscreen = false;
+
+    function updateFullscreenOrientationLayout() {
+      const stage = document.getElementById('visual-fs-stage');
+      if (!stage || !isVisualFullscreen) return;
+      // Si el dispositivo sigue en vertical (ej. bloqueo de rotación o navegador sin lock), rotar automáticamente 90° a horizontal
+      const isPortrait = window.innerHeight > window.innerWidth;
+      stage.classList.toggle('fs-rotated', isPortrait);
+    }
+
+    async function openVisualFullscreen() {
+      const overlay = document.getElementById('visual-fs-overlay');
+      if (!overlay) return;
+      isVisualFullscreen = true;
+      overlay.classList.add('fs-open');
+      document.body.style.overflow = 'hidden';
+
+      try {
+        if (overlay.requestFullscreen) {
+          await overlay.requestFullscreen();
+        } else if (overlay.webkitRequestFullscreen) {
+          overlay.webkitRequestFullscreen();
+        }
+      } catch (e) {
+        // Continúa en modo pantalla completa CSS
+      }
+
+      try {
+        if (screen && screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape');
+        }
+      } catch (e) {
+        // Fallback automático con rotación CSS si el dispositivo no permite lock
+      }
+
+      updateFullscreenOrientationLayout();
+      setTimeout(updateFullscreenOrientationLayout, 250);
+    }
+
+    async function closeVisualFullscreen() {
+      const overlay = document.getElementById('visual-fs-overlay');
+      if (!overlay) return;
+      isVisualFullscreen = false;
+      overlay.classList.remove('fs-open');
+      document.body.style.overflow = '';
+
+      try {
+        if (screen && screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (e) {}
+
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } catch (e) {}
+    }
+
+    document.getElementById('btn-visual-fullscreen').addEventListener('click', openVisualFullscreen);
+    document.getElementById('btn-fs-close').addEventListener('click', closeVisualFullscreen);
+    document.getElementById('btn-fs-real').addEventListener('click', () => syncLiveRealResults(false));
+    document.getElementById('btn-fs-png').addEventListener('click', downloadVisualBracketPng);
+
+    window.addEventListener('resize', updateFullscreenOrientationLayout);
+    window.addEventListener('orientationchange', () => setTimeout(updateFullscreenOrientationLayout, 200));
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && isVisualFullscreen) {
+        closeVisualFullscreen();
+      } else {
+        updateFullscreenOrientationLayout();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isVisualFullscreen) closeVisualFullscreen();
+    });
 
     document.getElementById('btn-lib-palmeiras').addEventListener('click', () => {
       state.estudiantesWinsLib = false;
