@@ -401,7 +401,7 @@
       { id: 'NOB', keys: ['newell'] },
       { id: 'IRV', keys: ['independiente rivadavia', 'ind. rivadavia', 'rivadavia'] },
       { id: 'IND', keys: ['independiente'] },
-      { id: 'GYM', keys: ['gimnasia mendoza', 'gimnasia (m)', 'gimnasia y esgrima mendoza', 'gimnasia de mendoza'] },
+      { id: 'GYM', keys: ['gimnasia (mendoza)', 'gimnasia mendoza', 'gimnasia (m)', 'gimnasia y esgrima mendoza', 'gimnasia de mendoza'] },
       { id: 'GLP', keys: ['gimnasia la plata', 'gimnasia (lp)', 'gimnasia y esgrima la plata', 'gimnasia'] },
       { id: 'ROS', keys: ['rosario central', 'central'] },
       { id: 'ARG', keys: ['argentinos juniors', 'argentinos'] },
@@ -498,15 +498,49 @@
         if (icon) icon.classList.add('animate-spin');
       }
 
-      const liveUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard?dates=20261120-20261215';
+      function buildPlayoffDates() {
+        const dates = [];
+        const start = new Date(Date.UTC(2026, 10, 20)); // 2026-11-20
+        const maxEnd = new Date(Date.UTC(2026, 11, 15)); // 2026-12-15
+        const now = new Date();
+        const end = now < maxEnd ? now : maxEnd;
+        const cur = new Date(start.getTime());
+        while (cur <= end) {
+          const yyyy = cur.getUTCFullYear();
+          const mm = String(cur.getUTCMonth() + 1).padStart(2, '0');
+          const dd = String(cur.getUTCDate()).padStart(2, '0');
+          dates.push(`${yyyy}${mm}${dd}`);
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+        return dates.length ? dates : ['20261120', '20261121', '20261122', '20261123'];
+      }
+
       try {
-        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const timer = controller ? setTimeout(() => controller.abort(), 7000) : null;
-        const resp = await fetch(liveUrl, controller ? { signal: controller.signal } : undefined);
-        if (timer) clearTimeout(timer);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
-        const events = Array.isArray(data && data.events) ? data.events : [];
+        const dateList = buildPlayoffDates();
+        const requests = dateList.map(dStr => {
+          const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard?dates=${dStr}`;
+          return fetch(url).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          });
+        });
+        const settled = await Promise.allSettled(requests);
+        const okCount = settled.filter(x => x.status === 'fulfilled').length;
+        if (okCount === 0) throw new Error('Sin respuesta del servidor');
+
+        const events = [];
+        const seenEventIds = new Set();
+        for (const res of settled) {
+          if (res.status !== 'fulfilled') continue;
+          const evs = Array.isArray(res.value && res.value.events) ? res.value.events : [];
+          for (const ev of evs) {
+            const eid = ev && ev.id ? String(ev.id) : JSON.stringify(ev);
+            if (!seenEventIds.has(eid)) {
+              seenEventIds.add(eid);
+              events.push(ev);
+            }
+          }
+        }
 
         // Extraer partidos finalizados con ambos equipos reconocidos
         const finishedMatches = [];
